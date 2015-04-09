@@ -1,5 +1,8 @@
 /**
  * Blog page of the Bitcot theme
+ *
+ * @author Blake Callens <blake@pencilblue.org>
+ * @copyright PencilBlue 2014, All rights reserved
  */
 function Blog(){}
 
@@ -126,20 +129,37 @@ Blog.prototype.render = function(cb) {
 
 Blog.prototype.getTemplate = function(content, cb) {
 
+    //check if we should just use whatever default there is.
+    //this could fall back to an active theme or the default pencilblue theme.
     if (!this.req.pencilblue_article && !this.req.pencilblue_page) {
         cb(null, 'index');
         return;
     }
+
+    //now we are dealing with a single page or article. the template will be
+    //judged based off the article's preference.
     if (util.isArray(content) && content.length > 0) {
         content = content[0];
     }
     var uidAndTemplate = content.template;
+
+    //when no template is specified or is empty we no that the article has no
+    //preference and we can fall back on the default (index).  We depend on the
+    //template service to determine who has priority based on the active theme
+    //then defaulting back to pencilblue.
     if (!pb.validation.validateNonEmptyStr(uidAndTemplate, true)) {
         pb.log.silly("ContentController: No template specified, defaulting to index.");
         cb(null, "index");
         return;
     }
+
+    //we now know that the template was specified.  We have to split the value
+    //to extract the intended theme and the template path
     var pieces = uidAndTemplate.split('|');
+
+    //for backward compatibility we let the template service determine where to
+    //find the template when no template is specified.  This mostly catches the
+    //default case of "index"
     if (pieces.length === 1) {
 
         pb.log.silly("ContentController: No theme specified, Template Service will delegate [%s]", pieces[0]);
@@ -147,14 +167,23 @@ Blog.prototype.getTemplate = function(content, cb) {
         return;
     }
     else if (pieces.length <= 0) {
+
+        //shit's broke. This should never be the case but better safe than sorry
         cb(new Error("The content's template property provided an invalid value of ["+content.template+']'), null);
         return;
     }
+
+    //the theme is specified, we ensure that the theme is installed and
+    //initialized otherwise we let the template service figure out how to
+    //delegate.
     if (!pb.PluginService.isActivePlugin(pieces[0])) {
         pb.log.silly("ContentController: Theme [%s] is not active, Template Service will delegate [%s]", pieces[0], pieces[1]);
         cb(null, pieces[1]);
         return;
     }
+
+    //the theme is OK. We don't gaurantee that the template is on the disk but we can testify that it SHOULD.  We set the
+    //prioritized theme for the template service.
     pb.log.silly("ContentController: Prioritizing Theme [%s] for template [%s]", pieces[0], pieces[1]);
     this.ts.setTheme(pieces[0]);
     cb(null, pieces[1]);
@@ -164,11 +193,15 @@ Blog.prototype.getTemplate = function(content, cb) {
 Blog.prototype.gatherData = function(cb) {
     var self  = this;
     var tasks = {
+
+        //navigation
         nav: function(callback) {
             self.getNavigation(function(themeSettings, navigation, accountButtons) {
                 callback(null, {themeSettings: themeSettings, navigation: navigation, accountButtons: accountButtons});
             });
         },
+
+        //articles, pages, etc.
         content: function(callback) {
             self.loadContent(callback);
         }
@@ -411,6 +444,19 @@ Blog.prototype.getSideNavigation = function(articles, cb) {
         });
     });
 };
+
+/**
+* Provides the routes that are to be handled by an instance of this prototype.
+* The route provides a definition of path, permissions, authentication, and
+* expected content type.
+* Method is optional
+* Path is required
+* Permissions are optional
+* Access levels are optional
+* Content type is optional
+*
+* @param cb A callback of the form: cb(error, array of objects)
+*/
 
 Blog.getRoutes = function(cb) {
     var routes = [

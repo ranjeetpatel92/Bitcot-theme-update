@@ -136,6 +136,11 @@ work.getRoutes = function(cb) {
     cb(null, routes);
 };
 
+//work.prototype.renderContent = function(work,callback) {
+//
+//};
+
+// Export the controller so it can be loaded into the application
 module.exports = work;
 
 

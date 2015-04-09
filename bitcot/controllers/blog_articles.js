@@ -14,6 +14,7 @@ util.inherits(Blog2, pb.BaseController);
 Blog2.prototype.render = function(cb) {
 
     var self = this;
+    //determine and execute the proper call
     var article = self.req.pencilblue_article || null;
     var page    = self.req.pencilblue_page    || null;
 
@@ -37,8 +38,9 @@ Blog2.prototype.render = function(cb) {
                         cb(null, new pb.TemplateValue(infiniteScrollScript, false));
                     }
                 });
-                self.ts.registerLocal('pages', function(flag, cb) {
 
+                self.ts.registerLocal('pages', function(flag, cb) {
+                    //var mycount=0;
                     var tasks = pb.utils.getTasks(data.content, function(content, i) {
                         return function(callback) {
                             if (i >= contentSettings.articles_per_page) {//TODO, limit articles in query, not throug hackery
@@ -51,6 +53,23 @@ Blog2.prototype.render = function(cb) {
                     async.parallel(tasks, function(err, result) {
                         cb(err, new pb.TemplateValue(result.join(''), false));
                     });
+                });
+                self.ts.registerLocal('angular', function(flag, cb) {
+
+                    var loggedIn       = pb.security.isAuthenticated(self.session);
+                    //var commentingUser = loggedIn ? Comments.getCommentingUser(self.session.authentication.user) : null;
+
+                    var objects = {
+                        contentSettings: contentSettings,
+                        loggedIn: loggedIn,
+                        //commentingUser: commentingUser,
+                        themeSettings: data.nav.themeSettings,
+
+                        //sideNavItems: sideNavItems,
+                        trustHTML: 'function(string){return $sce.trustAsHtml(string);}'
+                    };
+                    var angularData = pb.js.getAngularController(objects, ['ngSanitize']);
+                    cb(null, angularData);
                 });
                 self.ts.load('blog_articles', function(err, result) {
                     if (util.isError(err)) {
@@ -160,6 +179,9 @@ Blog2.prototype.getNavigation = function(cb) {
     });
 };
 
+/**
+ * @param cb A callback of the form: cb(error, array of objects)
+ */
 Blog2.getRoutes = function(cb) {
     var routes = [
         {

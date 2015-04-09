@@ -1366,7 +1366,7 @@ margin-bottom:35px;
 
 #project-preview .loader{
 	display:block;
-	background:url(../assets/loader.gif) center center no-repeat;
+	background:url(images/loading.gif) center center no-repeat;
     width:36px;
 	height:36px;
 	position:absolute;

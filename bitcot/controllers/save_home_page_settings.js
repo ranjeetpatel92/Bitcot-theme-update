@@ -1,5 +1,8 @@
 /**
  * SaveHomePageSettings - Saves settings for the display of home page content in the Bitcot
+ *
+ * @author Blake Callens <blake@pencilblue.org>
+ * @copyright 2014 PencilBlue, LLC.  All Rights Reserved
  */
 
 function SaveHomePageSettings() {}
